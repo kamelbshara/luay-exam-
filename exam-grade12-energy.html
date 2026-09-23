@@ -757,7 +757,9 @@ let violationCount = 0;
 // إعدادات تسليم النتائج للمعلم
 //  - endpoint: ضع هنا رابط (Google Apps Script Web App) ليستلم النتائج تلقائياً عند التسليم. اتركه فارغاً لتعطيل الإرسال التلقائي.
 //  - teacherWhatsApp: رقم المعلم بالصيغة الدولية بدون + (يُستخدم لزر الإرسال عبر واتساب).
-const SUBMIT_CONFIG = { endpoint: "", token: "physics2026", teacherWhatsApp: "971505369567" };   // endpoint: رابط Google Apps Script | token: نفس كلمة SECRET في السكربت
+const SUBMIT_CONFIG = { endpoint: "", token: "physics2026", teacherWhatsApp: "971505369567" };
+// قراءة إعدادات المعلم من التخزين المحلي (تُضبط من صفحة إعداد المعلم)
+(function(){try{var _c=JSON.parse(localStorage.getItem('luay_exam_config')||'{}');if(_c.endpoint)SUBMIT_CONFIG.endpoint=_c.endpoint;if(_c.token)SUBMIT_CONFIG.token=_c.token;}catch(e){}}());   // endpoint: رابط Google Apps Script | token: نفس كلمة SECRET في السكربت
 
 const Q = () => banks[currentModel];
 

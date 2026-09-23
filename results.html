@@ -134,6 +134,21 @@ tbody tr:last-child td{border-bottom:0}
     </div>
   </div>
 
+  <!-- مزامنة مع Google Sheets -->
+  <div class="section no-print" id="syncSection">
+    <div class="section-title">
+      <span>🔄 مزامنة النتائج من Google Sheets</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-green" onclick="syncRemote()" id="syncBtn">تحديث من Google Sheets</button>
+        <a href="teacher-setup.html" class="btn btn-ghost">⚙️ إعداد المعلم</a>
+      </div>
+    </div>
+    <div id="syncStatus" style="font-size:13px;color:var(--text-soft);margin-top:4px">
+      سيتم جلب نتائج جميع الطلاب من Google Sheets عند الضغط على زر التحديث.
+      اضغط على <b>إعداد المعلم</b> إذا لم تقم بإعداد الرابط بعد.
+    </div>
+  </div>
+
   <!-- إحصائيات سريعة -->
   <div class="section">
     <div class="section-title">
@@ -403,10 +418,61 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3200);
 }
 
+// ---- مزامنة مع Google Sheets ----
+function syncRemote() {
+  let cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('luay_exam_config') || '{}'); } catch(e) {}
+  if (!cfg.endpoint) {
+    document.getElementById('syncStatus').innerHTML =
+      '<b style="color:var(--bad)">⚠️ لم يتم إعداد رابط Google Apps Script بعد.</b> &nbsp;<a href="teacher-setup.html" style="color:var(--primary)">اضغط هنا للإعداد</a>';
+    return;
+  }
+  const btn = document.getElementById('syncBtn');
+  btn.textContent = '...جاري التحديث';
+  btn.disabled = true;
+  const token = cfg.token || 'physics2026';
+  const sep = cfg.endpoint.includes('?') ? '&' : '?';
+  const url = cfg.endpoint + sep + 'token=' + encodeURIComponent(token);
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      const remote = Array.isArray(data.results) ? data.results : [];
+      let added = 0;
+      remote.forEach(r => {
+        // خريطة الأعمدة العربية إلى الحقول المحلية
+        const rec = {
+          name:        r['الاسم']          || r.name        || '',
+          id:          String(r['الرقم']   || r.id          || ''),
+          section:     r['الشعبة']         || r.section     || '',
+          exam:        r['الاختبار']        || r.exam        || '',
+          score:       parseFloat(r['الدرجة'] || r.score   || 0),
+          total:       parseFloat(r['من']     || r.total   || 100),
+          submittedAt: r['وقت_التسليم']   || r.submittedAt || ''
+        };
+        if (!rec.name) return;
+        const exists = results.find(x => x.name === rec.name && x.exam === rec.exam);
+        if (!exists) { results.push(rec); added++; }
+      });
+      if (added) save();
+      renderTable();
+      const now = new Date().toLocaleString('ar-AE');
+      document.getElementById('syncStatus').innerHTML =
+        `✅ آخر مزامنة: <b>${now}</b> — إجمالي السجلات: <b>${remote.length}</b>، أضيف جديد: <b>${added}</b>`;
+    })
+    .catch(err => {
+      document.getElementById('syncStatus').innerHTML =
+        `<b style="color:var(--bad)">❌ فشل الاتصال بـ Google Sheets: ${err.message}</b><br>
+         تأكد من إعداد الرابط في <a href="teacher-setup.html" style="color:var(--primary)">صفحة إعداد المعلم</a>.`;
+    })
+    .finally(() => { btn.textContent = 'تحديث من Google Sheets'; btn.disabled = false; });
+}
+
 // ---- تهيئة ----
 load();
 readURLParams();
 renderTable();
+// مزامنة تلقائية عند فتح الصفحة إذا كان الرابط مُعدّاً
+(function(){try{const c=JSON.parse(localStorage.getItem('luay_exam_config')||'{}');if(c.endpoint)syncRemote();}catch(e){}}());
 </script>
 </body>
 </html>
