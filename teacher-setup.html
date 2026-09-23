@@ -82,9 +82,68 @@ body{font-family:var(--ar);background:linear-gradient(160deg,#eef2ff,#f0fdf4);mi
 #savedNote{padding:10px 14px;border-radius:10px;background:var(--ok-bg);
   border:1px solid #a7f3d0;color:var(--ok);font-weight:700;font-size:13px;margin-top:10px}
 #savedNote.hidden{display:none}
+
+/* شاشة القفل */
+#lockScreen{position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#0b1024 0%,#312e81 50%,#0b1024 100%);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+#lockBox{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(16px);border-radius:28px;padding:40px 36px;
+  text-align:center;max-width:380px;width:100%;
+  box-shadow:0 30px 60px rgba(0,0,0,.5)}
+#lockBox .lock-icon{font-size:52px;margin-bottom:16px}
+#lockBox h2{color:#fff;font-size:22px;font-weight:900;margin-bottom:6px}
+#lockBox p{color:rgba(255,255,255,.65);font-size:14px;margin-bottom:24px;line-height:1.6}
+#lockPin{width:100%;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08);color:#fff;font-family:var(--ar);
+  font-size:20px;font-weight:800;text-align:center;letter-spacing:6px;
+  outline:none;transition:.2s}
+#lockPin:focus{border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.12)}
+#lockPin::placeholder{letter-spacing:2px;font-size:14px;font-weight:600;color:rgba(255,255,255,.35)}
+#lockErr{color:#fca5a5;font-size:13px;font-weight:700;margin-top:10px;min-height:20px}
+#lockBtn{margin-top:18px;width:100%;padding:14px;border-radius:14px;border:0;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;
+  font-family:var(--ar);font-weight:900;font-size:16px;cursor:pointer;transition:.2s;
+  box-shadow:0 8px 20px rgba(79,70,229,.4)}
+#lockBtn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(79,70,229,.5)}
+body.locked{overflow:hidden}
 </style>
 </head>
 <body>
+
+<!-- شاشة القفل -->
+<div id="lockScreen">
+  <div id="lockBox">
+    <div class="lock-icon">🔐</div>
+    <h2>إعداد المعلم — محمية</h2>
+    <p>هذه الصفحة مخصصة للمعلم فقط<br>أدخل كلمة المرور للمتابعة</p>
+    <input type="password" id="lockPin" placeholder="أدخل كلمة المرور" maxlength="20"
+           onkeydown="if(event.key==='Enter')checkLock()">
+    <div id="lockErr"></div>
+    <button id="lockBtn" onclick="checkLock()">دخول ←</button>
+  </div>
+</div>
+<script>
+(function(){
+  const ok = sessionStorage.getItem('teacher_auth') === '1';
+  if (ok) { document.getElementById('lockScreen').style.display='none'; }
+  else { document.body.classList.add('locked'); }
+})();
+function checkLock(){
+  const val = document.getElementById('lockPin').value;
+  if (val === 'LD1234') {
+    sessionStorage.setItem('teacher_auth','1');
+    document.body.classList.remove('locked');
+    document.getElementById('lockScreen').style.display='none';
+  } else {
+    const err = document.getElementById('lockErr');
+    err.textContent = '❌ كلمة المرور غير صحيحة';
+    document.getElementById('lockPin').value='';
+    document.getElementById('lockPin').focus();
+    setTimeout(()=>{ err.textContent=''; },2500);
+  }
+}
+</script>
 
 <header class="hdr">
   <h1>⚙️ إعداد منصة الاختبارات</h1>
