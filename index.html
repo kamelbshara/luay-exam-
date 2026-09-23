@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>منصة اختبارات الفيزياء - مدرسة خالد بن الوليد</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',system-ui,sans-serif;background:linear-gradient(160deg,#eef2ff 0%,#f0fdf4 100%);min-height:100vh;color:#1e293b}
+.header{background:linear-gradient(120deg,#0b1024,#312e81,#4f46e5,#0891b2,#312e81,#0b1024);
+  background-size:300% 300%;animation:gs 16s ease infinite;
+  color:#fff;padding:40px 20px 50px;text-align:center;
+  border-bottom-left-radius:36px;border-bottom-right-radius:36px;
+  box-shadow:0 8px 30px rgba(15,23,42,.3)}
+@keyframes gs{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.header h1{font-size:clamp(24px,4.5vw,40px);font-weight:900;margin-bottom:8px}
+.header p{opacity:.85;font-size:15px;font-weight:600}
+.badge{display:inline-flex;gap:8px 18px;padding:9px 22px;border-radius:40px;margin-top:16px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(8px);font-weight:700;font-size:14px;flex-wrap:wrap;justify-content:center}
+.badge span{color:#fbbf24}
+.wrap{max-width:900px;margin:40px auto;padding:0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:28px 24px;
+  box-shadow:0 12px 30px -10px rgba(49,46,129,.2);transition:.25s;overflow:hidden;position:relative}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,#4f46e5,#7c3aed,#06b6d4);background-size:200% 100%;animation:gs 5s linear infinite}
+.card:hover{transform:translateY(-4px);box-shadow:0 20px 40px -10px rgba(49,46,129,.3)}
+.card-badge{display:inline-block;padding:4px 14px;border-radius:30px;font-size:12px;font-weight:800;margin-bottom:14px}
+.badge-10{background:#e0e7ff;color:#3730a3}
+.badge-12{background:#d1fae5;color:#065f46}
+.card h2{font-size:18px;font-weight:900;color:#1e293b;margin-bottom:8px}
+.card p{font-size:13.5px;color:#475569;line-height:1.7;margin-bottom:18px}
+.card a{display:inline-block;padding:11px 26px;border-radius:14px;font-weight:800;font-size:15px;
+  text-decoration:none;color:#fff;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  box-shadow:0 6px 18px rgba(79,70,229,.35);transition:.2s}
+.card a:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(79,70,229,.45)}
+.teacher-card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:24px;
+  box-shadow:0 8px 24px -10px rgba(5,150,105,.2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.teacher-card h3{font-size:17px;font-weight:900;color:#065f46}
+.teacher-card p{font-size:13px;color:#475569;margin-top:4px}
+.teacher-card a{display:inline-block;padding:11px 28px;border-radius:14px;font-weight:800;font-size:15px;
+  text-decoration:none;color:#fff;
+  background:linear-gradient(135deg,#047857,#059669);
+  box-shadow:0 6px 18px rgba(5,150,105,.35);transition:.2s}
+.teacher-card a:hover{transform:translateY(-2px)}
+.note{margin-top:20px;padding:14px 18px;background:#fffbeb;border:1px solid #fde68a;border-radius:14px;
+  font-size:13.5px;color:#78350f;line-height:1.8;font-weight:600}
+</style>
+</head>
+<body>
+<header class="header">
+  <h1>منصة اختبارات الفيزياء</h1>
+  <p>الإمارات العربية المتحدة — الفصل الدراسي الأول 2026-2027</p>
+  <div class="badge">
+    <span>مدرسة خالد بن الوليد</span>
+    <span>|</span>
+    <span>الأستاذ: لؤي بني عطا</span>
+    <span>|</span>
+    <span>📞 0505369567</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-badge badge-10">الصف العاشر المتقدم</div>
+      <h2>اختبار المرايا والانعكاس</h2>
+      <p>Optics: Reflection and Mirrors<br>يغطي مفاهيم الانعكاس وأنواع المرايا وتكوين الصور ومعادلات المرايا الكروية</p>
+      <a href="exam-grade10-mirrors.html">ابدأ الاختبار ←</a>
+    </div>
+    <div class="card">
+      <div class="card-badge badge-12">الصف الثاني عشر المتقدم</div>
+      <h2>اختبار الطاقة وحفظها</h2>
+      <p>Energy and Its Conservation<br>يغطي أنواع الطاقة وقانون حفظ الطاقة وتحولاتها في الأنظمة الميكانيكية</p>
+      <a href="exam-grade12-energy.html" style="background:linear-gradient(135deg,#047857,#059669);box-shadow:0 6px 18px rgba(5,150,105,.35)">ابدأ الاختبار ←</a>
+    </div>
+  </div>
+
+  <div class="teacher-card">
+    <div>
+      <h3>📊 لوحة المعلم — سجل النتائج</h3>
+      <p>عرض وإدارة نتائج الطلاب وتصديرها إلى Excel</p>
+    </div>
+    <a href="results.html">فتح سجل النتائج</a>
+  </div>
+
+  <div class="note">
+    <b>ملاحظة للطلاب:</b> بعد إنهاء الاختبار وتسليمه، انقر على زر <b>"تسجيل النتيجة في سجل المعلم"</b> الذي يظهر في صفحة النتيجة لتسجيل درجتك تلقائياً.
+  </div>
+
+</div>
+</body>
+</html>

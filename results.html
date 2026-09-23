@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سجل نتائج الاختبارات - الفيزياء</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+:root{
+  --primary:#4f46e5;--primary-dark:#3730a3;--violet:#7c3aed;
+  --accent:#06b6d4;--gold:#d97706;--gold-light:#fbbf24;
+  --ok:#059669;--ok-bg:#ecfdf5;--bad:#dc2626;--bad-bg:#fef2f2;
+  --bg:#eef2ff;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--text-soft:#475569;
+  --font:'Cairo',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:linear-gradient(160deg,#eef2ff,#f0fdf4);min-height:100vh;color:var(--text);font-size:15px}
+.header{background:linear-gradient(120deg,#0b1024,#312e81,#4f46e5,#0891b2,#312e81,#0b1024);
+  background-size:300% 300%;animation:gradShift 16s ease infinite;
+  color:#fff;padding:28px 20px;text-align:center;
+  border-bottom-left-radius:28px;border-bottom-right-radius:28px;
+  box-shadow:0 8px 30px rgba(15,23,42,.3)}
+@keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.header h1{font-size:clamp(22px,4vw,34px);font-weight:900;margin-bottom:6px}
+.header p{opacity:.85;font-weight:600;font-size:14px}
+.wrap{max-width:1100px;margin:30px auto;padding:0 16px}
+
+/* بطاقات روابط الاختبارات */
+.exam-links{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+@media(max-width:620px){.exam-links{grid-template-columns:1fr}}
+.exam-card{background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:20px 22px;box-shadow:0 8px 24px -10px rgba(79,70,229,.22);
+  display:flex;flex-direction:column;gap:10px}
+.exam-card h3{font-size:16px;font-weight:800;color:var(--primary-dark)}
+.exam-card p{font-size:13px;color:var(--text-soft)}
+.exam-card a{display:inline-block;padding:9px 22px;border-radius:12px;font-weight:800;
+  font-size:14px;text-decoration:none;color:#fff;
+  background:linear-gradient(135deg,var(--primary),var(--violet));
+  box-shadow:0 6px 16px rgba(79,70,229,.35);transition:.2s}
+.exam-card a:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(79,70,229,.45)}
+
+/* إشعار التسجيل */
+.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-140%);z-index:999;
+  padding:12px 28px;border-radius:14px;font-weight:900;font-size:15px;
+  background:linear-gradient(135deg,#065f46,#059669);color:#fff;
+  box-shadow:0 14px 34px rgba(0,0,0,.25);transition:transform .4s cubic-bezier(.2,.9,.3,1.2)}
+.toast.show{transform:translate(-50%,0)}
+
+/* قسم النتائج */
+.section{background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:22px 24px;margin-bottom:22px;box-shadow:0 8px 24px -10px rgba(79,70,229,.15)}
+.section-title{font-size:17px;font-weight:900;color:var(--primary-dark);margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+/* فلاتر */
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
+.filters select,.filters input[type=text]{
+  padding:8px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:var(--font);font-size:14px;color:var(--text);background:#fff;outline:none}
+.filters select:focus,.filters input:focus{border-color:var(--primary)}
+
+/* الجدول */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+thead tr th{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;
+  padding:11px 10px;font-weight:800;border-bottom:none}
+thead tr th:first-child{border-radius:12px 0 0 0}
+thead tr th:last-child{border-radius:0 12px 0 0}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:#f5f3ff}
+tbody tr td{padding:10px 10px;border-bottom:1px solid #e0e7ff;font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:800}
+.badge-ok{background:var(--ok-bg);color:var(--ok)}
+.badge-warn{background:#fffbeb;color:#92400e}
+.badge-bad{background:var(--bad-bg);color:var(--bad)}
+.score-cell{font-weight:900;font-size:16px;font-family:'Courier New',monospace}
+
+/* عداد */
+.stats-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.stat-box{flex:1;min-width:120px;background:linear-gradient(135deg,#f0f4ff,#e8f5ff);
+  border:1px solid #dde6ff;border-radius:14px;padding:12px 14px;text-align:center}
+.stat-box .stat-val{font-size:24px;font-weight:900;color:var(--primary);line-height:1.2}
+.stat-box .stat-lbl{font-size:12px;color:var(--text-soft);font-weight:700;margin-top:4px}
+
+/* الأزرار */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border:0;border-radius:12px;
+  font-family:var(--font);font-weight:800;font-size:14px;cursor:pointer;transition:.2s;text-decoration:none}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.3)}
+.btn-green{background:linear-gradient(135deg,#047857,var(--ok));color:#fff;box-shadow:0 6px 16px rgba(5,150,105,.3)}
+.btn-red{background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;box-shadow:0 6px 16px rgba(220,38,38,.25)}
+.btn-ghost{background:#fff;color:var(--primary-dark);border:1.5px solid #c7d2fe}
+
+/* مساحة الإدخال اليدوي */
+.manual-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.manual-form input,.manual-form select{
+  padding:9px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:var(--font);font-size:14px;color:var(--text);background:#fff}
+.manual-form input:focus,.manual-form select:focus{border-color:var(--primary);outline:none}
+
+/* فارغ */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-soft)}
+.empty-state svg{width:54px;height:54px;margin-bottom:12px;opacity:.35}
+.empty-state p{font-weight:700;font-size:15px}
+
+/* طباعة */
+@media print{.no-print{display:none!important}body{background:#fff}
+  .section{box-shadow:none;border:1px solid #ddd}.header{background:#312e81!important;-webkit-print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<header class="header no-print">
+  <h1>سجل نتائج الاختبارات — الفيزياء</h1>
+  <p>مدرسة خالد بن الوليد &nbsp;|&nbsp; الأستاذ: لؤي بني عطا &nbsp;|&nbsp; السنة الدراسية 2026-2027</p>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<div class="wrap">
+
+  <!-- روابط الاختبارين -->
+  <div class="exam-links no-print">
+    <div class="exam-card">
+      <h3>اختبار الصف العاشر المتقدم</h3>
+      <p>المرايا والانعكاس — Optics: Reflection and Mirrors</p>
+      <a href="exam-grade10-mirrors.html" target="_blank">🔗 فتح الاختبار</a>
+    </div>
+    <div class="exam-card">
+      <h3>اختبار الصف الثاني عشر المتقدم</h3>
+      <p>الطاقة وحفظها — Energy and Its Conservation</p>
+      <a href="exam-grade12-energy.html" target="_blank">🔗 فتح الاختبار</a>
+    </div>
+  </div>
+
+  <!-- إحصائيات سريعة -->
+  <div class="section">
+    <div class="section-title">
+      <span>إحصائيات النتائج المجمّعة</span>
+    </div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat-box"><div class="stat-val" id="stTotal">0</div><div class="stat-lbl">إجمالي الطلاب</div></div>
+      <div class="stat-box"><div class="stat-val" id="stAvg">—</div><div class="stat-lbl">المتوسط العام</div></div>
+      <div class="stat-box"><div class="stat-val" id="stPass">0</div><div class="stat-lbl">ناجح ≥ 50</div></div>
+      <div class="stat-box"><div class="stat-val" id="stExcellent">0</div><div class="stat-lbl">ممتاز ≥ 90</div></div>
+      <div class="stat-box"><div class="stat-val" id="stMirrors">0</div><div class="stat-lbl">اختبار الصف 10</div></div>
+      <div class="stat-box"><div class="stat-val" id="stEnergy">0</div><div class="stat-lbl">اختبار الصف 12</div></div>
+    </div>
+  </div>
+
+  <!-- جدول النتائج -->
+  <div class="section">
+    <div class="section-title">
+      <span>سجل النتائج</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" class="no-print">
+        <button class="btn btn-green" onclick="exportExcel()">📥 تنزيل Excel</button>
+        <button class="btn btn-primary" onclick="exportCSV()">📄 تنزيل CSV</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+        <button class="btn btn-red" onclick="clearAll()" style="font-size:13px">🗑 مسح الكل</button>
+      </div>
+    </div>
+
+    <!-- فلاتر -->
+    <div class="filters no-print">
+      <select id="filterExam" onchange="renderTable()">
+        <option value="">كل الاختبارات</option>
+        <option value="mirrors">الصف 10 - مرايا</option>
+        <option value="energy">الصف 12 - طاقة</option>
+      </select>
+      <select id="filterSection" onchange="renderTable()">
+        <option value="">كل الشُعَب</option>
+        <option value="A">شعبة A</option>
+        <option value="B">شعبة B</option>
+        <option value="C">شعبة C</option>
+      </select>
+      <input type="text" id="filterName" placeholder="ابحث باسم الطالب..." oninput="renderTable()" style="min-width:200px">
+    </div>
+
+    <div class="tbl-wrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>اسم الطالب</th>
+            <th>رقم الطالب</th>
+            <th>الشعبة</th>
+            <th>الاختبار</th>
+            <th>الدرجة</th>
+            <th>النسبة</th>
+            <th>الحالة</th>
+            <th>وقت التسليم</th>
+            <th class="no-print">حذف</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state hidden" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <p>لا توجد نتائج مسجّلة بعد.<br>ستظهر هنا تلقائياً عند نقر الطلاب على زر "تسجيل النتيجة في سجل المعلم" بعد إنهاء الاختبار.</p>
+    </div>
+  </div>
+
+  <!-- إدخال يدوي -->
+  <div class="section no-print">
+    <div class="section-title">إضافة نتيجة يدوياً</div>
+    <div class="manual-form">
+      <input type="text" id="mName" placeholder="اسم الطالب *">
+      <input type="text" id="mId" placeholder="رقم الطالب">
+      <select id="mSection">
+        <option value="">الشعبة</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+      </select>
+      <select id="mExam">
+        <option value="mirrors">الصف 10 - مرايا</option>
+        <option value="energy">الصف 12 - طاقة</option>
+      </select>
+      <input type="number" id="mScore" placeholder="الدرجة (من 100)" min="0" max="100">
+    </div>
+    <button class="btn btn-primary no-print" onclick="addManual()">+ إضافة</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const STORAGE_KEY = 'luay_exam_results_v1';
+let results = [];
+
+// ---- تحميل البيانات ----
+function load() {
+  try { results = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { results = []; }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+}
+
+// ---- استقبال النتيجة من URL (عندما يفتح الطالب الصفحة بعد الاختبار) ----
+function readURLParams() {
+  const p = new URLSearchParams(location.search);
+  if (!p.get('n') && !p.get('sc')) return;
+  const rec = {
+    name: p.get('n') || '',
+    id: p.get('i') || '',
+    section: p.get('s') || '',
+    score: parseFloat(p.get('sc')) || 0,
+    total: parseFloat(p.get('t')) || 100,
+    exam: p.get('ex') || 'unknown',
+    submittedAt: p.get('at') || new Date().toISOString()
+  };
+  if (!rec.name) return;
+  // تجنب التسجيل المكرر لنفس الطالب في نفس الاختبار
+  const exists = results.find(r => r.name === rec.name && r.exam === rec.exam);
+  if (!exists) {
+    results.push(rec);
+    save();
+    showToast('✅ تم تسجيل نتيجة ' + rec.name + ' بنجاح!');
+  } else {
+    showToast('ℹ️ نتيجة هذا الطالب مسجّلة مسبقاً');
+  }
+  // إزالة المتغيرات من URL
+  history.replaceState({}, '', location.pathname);
+}
+
+// ---- عرض الجدول ----
+function filtered() {
+  const exam = document.getElementById('filterExam').value;
+  const sec  = document.getElementById('filterSection').value;
+  const name = document.getElementById('filterName').value.trim().toLowerCase();
+  return results.filter(r =>
+    (!exam || r.exam === exam) &&
+    (!sec  || r.section === sec) &&
+    (!name || r.name.toLowerCase().includes(name))
+  );
+}
+
+function renderTable() {
+  const rows = filtered();
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  if (!rows.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); updateStats(); return; }
+  empty.classList.add('hidden');
+  const examName = e => e === 'mirrors' ? 'الصف 10 مرايا' : e === 'energy' ? 'الصف 12 طاقة' : e;
+  const pct = r => r.total ? Math.round(r.score / r.total * 100) : 0;
+  const badge = p => p >= 90 ? `<span class="badge badge-ok">ممتاز</span>`
+                   : p >= 75 ? `<span class="badge badge-ok">جيد جداً</span>`
+                   : p >= 50 ? `<span class="badge badge-warn">مقبول</span>`
+                             : `<span class="badge badge-bad">ضعيف</span>`;
+  const fmt = d => { try { return new Date(d).toLocaleString('ar-AE'); } catch(e) { return d; } };
+  tbody.innerHTML = rows.map((r, i) => {
+    const globalIdx = results.indexOf(r);
+    const p = pct(r);
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-weight:800">${r.name}</td>
+      <td style="font-family:monospace">${r.id || '—'}</td>
+      <td>${r.section || '—'}</td>
+      <td>${examName(r.exam)}</td>
+      <td class="score-cell" style="color:${p>=75?'var(--ok)':p>=50?'var(--gold)':'var(--bad)'}">${r.score} / ${r.total}</td>
+      <td><b style="color:${p>=75?'var(--ok)':p>=50?'var(--gold)':'var(--bad)'}">${p}%</b></td>
+      <td>${badge(p)}</td>
+      <td style="font-size:12px;direction:ltr">${fmt(r.submittedAt)}</td>
+      <td class="no-print"><button onclick="deleteRow(${globalIdx})" style="background:none;border:none;cursor:pointer;color:var(--bad);font-size:16px" title="حذف">✕</button></td>
+    </tr>`;
+  }).join('');
+  updateStats();
+}
+
+function updateStats() {
+  const all = results;
+  const n = all.length;
+  document.getElementById('stTotal').textContent = n;
+  document.getElementById('stMirrors').textContent = all.filter(r=>r.exam==='mirrors').length;
+  document.getElementById('stEnergy').textContent = all.filter(r=>r.exam==='energy').length;
+  if (!n) { document.getElementById('stAvg').textContent = '—'; document.getElementById('stPass').textContent = '0'; document.getElementById('stExcellent').textContent = '0'; return; }
+  const pct = r => r.total ? (r.score / r.total * 100) : 0;
+  const avg = all.reduce((s,r) => s + pct(r), 0) / n;
+  document.getElementById('stAvg').textContent = avg.toFixed(1) + '%';
+  document.getElementById('stPass').textContent = all.filter(r => pct(r) >= 50).length;
+  document.getElementById('stExcellent').textContent = all.filter(r => pct(r) >= 90).length;
+}
+
+// ---- إضافة يدوية ----
+function addManual() {
+  const name = document.getElementById('mName').value.trim();
+  if (!name) { alert('الرجاء إدخال اسم الطالب'); return; }
+  const score = parseFloat(document.getElementById('mScore').value);
+  if (isNaN(score)) { alert('الرجاء إدخال الدرجة'); return; }
+  results.push({
+    name,
+    id: document.getElementById('mId').value.trim(),
+    section: document.getElementById('mSection').value,
+    score,
+    total: 100,
+    exam: document.getElementById('mExam').value,
+    submittedAt: new Date().toISOString()
+  });
+  save();
+  renderTable();
+  showToast('✅ تم إضافة النتيجة');
+  ['mName','mId','mScore'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ---- حذف ----
+function deleteRow(idx) {
+  if (!confirm('هل تريد حذف هذه النتيجة؟')) return;
+  results.splice(idx, 1);
+  save();
+  renderTable();
+}
+
+function clearAll() {
+  if (!results.length) return;
+  if (!confirm('هل أنت متأكد من مسح جميع النتائج؟ لا يمكن التراجع.')) return;
+  results = [];
+  save();
+  renderTable();
+}
+
+// ---- تصدير Excel ----
+function exportExcel() {
+  if (!results.length) { alert('لا توجد نتائج للتصدير'); return; }
+  const examName = e => e === 'mirrors' ? 'اختبار الصف 10 - مرايا' : e === 'energy' ? 'اختبار الصف 12 - طاقة' : e;
+  const data = [['#','اسم الطالب','رقم الطالب','الشعبة','الاختبار','الدرجة','الدرجة الكلية','النسبة %','وقت التسليم']];
+  filtered().forEach((r, i) => {
+    const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+    data.push([i+1, r.name, r.id || '', r.section || '', examName(r.exam), r.score, r.total, pct + '%', r.submittedAt ? new Date(r.submittedAt).toLocaleString('ar-AE') : '']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  // عرض الأعمدة
+  ws['!cols'] = [{wch:4},{wch:35},{wch:15},{wch:8},{wch:28},{wch:10},{wch:12},{wch:10},{wch:22}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'نتائج الاختبارات');
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `نتائج_اختبارات_فيزياء_${date}.xlsx`);
+}
+
+// ---- تصدير CSV ----
+function exportCSV() {
+  if (!results.length) { alert('لا توجد نتائج للتصدير'); return; }
+  const examName = e => e === 'mirrors' ? 'الصف10-مرايا' : e === 'energy' ? 'الصف12-طاقة' : e;
+  const rows = [['الاسم','الرقم','الشعبة','الاختبار','الدرجة','من','النسبة','وقت_التسليم']];
+  filtered().forEach(r => {
+    const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+    rows.push([r.name, r.id||'', r.section||'', examName(r.exam), r.score, r.total, pct+'%', r.submittedAt||'']);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `نتائج_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ---- Toast ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ---- تهيئة ----
+load();
+readURLParams();
+renderTable();
+</script>
+</body>
+</html>
