@@ -284,7 +284,7 @@ body.locked{overflow:hidden}
 (function(){
   // إذا كان الرابط يحمل نتيجة طالب، تجاوز القفل وسجّل النتيجة فقط
   const p = new URLSearchParams(location.search);
-  if (p.get('n') || p.get('sc')) {
+  if (p.get('n') || p.get('sc') || p.get('session')) {
     // وضع تسجيل الطالب — تجاوز القفل، readURLParams() ستعرض شاشة النجاح
     document.getElementById('lockScreen').style.display='none';
     return;
@@ -334,11 +334,19 @@ function readURLParams() {
     submittedAt: p.get('at') || new Date().toISOString(),
     answers: [], skills: [], violations: 0, durationSeconds: 0, timedOut: false, model: ''
   };
-  // محاولة فك ترميز البيانات الكاملة (base64 JSON)
+  // مسار 1: بيانات كاملة عبر base64 في URL
   const encoded = p.get('data');
+  // مسار 2: بيانات كبيرة محفوظة في sessionStorage (عندما يكون URL طويلاً جداً)
+  const fromSession = p.get('session') === '1';
+  let rawJson = null;
   if (encoded) {
+    try { rawJson = decodeURIComponent(escape(atob(encoded))); } catch(e) {}
+  } else if (fromSession) {
+    try { rawJson = sessionStorage.getItem('luay_pending_result'); sessionStorage.removeItem('luay_pending_result'); } catch(e) {}
+  }
+  if (rawJson) {
     try {
-      const full = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      const full = JSON.parse(rawJson);
       if (full.student) {
         rec.name    = full.student.name    || rec.name;
         rec.id      = full.student.id      || rec.id;

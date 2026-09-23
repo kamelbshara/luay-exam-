@@ -1322,13 +1322,13 @@ function buildRecord(score, max, pct, writtenCount, grand, skillStats) {
     skills: Object.keys(skillStats).map(k => ({name: k, earned: r2(skillStats[k].earned), total: r2(skillStats[k].total),
                                                 percent: Math.round(skillStats[k].earned / skillStats[k].total * 100)})),
     answers: qs.map((q, i) => q.written
-      ? {no: i + 1, source: q.src, type: 'written',
+      ? {no: i + 1, type: 'written',
          earned: (writtenResults[q.id] || {earned: 0}).earned,
          parts: partsOf(q).map((p, pi) => ({label: plainText(p.ar), answer: partAnswer(q, pi),
                                             ok: !!(writtenResults[q.id] && writtenResults[q.id].parts[pi].ok),
                                             pts: writtenResults[q.id] ? writtenResults[q.id].parts[pi].pts : 0})),
          answer: partsOf(q).map((p, pi) => partAnswer(q, pi)).filter(Boolean).join('\n')}
-      : {no: i + 1, source: q.src, type: 'mcq',
+      : {no: i + 1, type: 'mcq',
          chosen: userAnswers[q.id] === undefined ? null : letterOf(userAnswers[q.id]),
          correct: letterOf(q.ans),
          isCorrect: userAnswers[q.id] === q.ans})
@@ -1424,10 +1424,19 @@ function registerResult() {
     skills: lastRecord.skills || []
   };
   try {
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-    const p = new URLSearchParams({ n: lastRecord.student.name, sc: lastRecord.score,
-      t: lastRecord.total, ex: 'mirrors', at: lastRecord.submittedAt, data: encoded });
-    window.open('results.html?' + p, '_blank');
+    const json = JSON.stringify(payload);
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    // إذا كانت البيانات كبيرة جداً للـ URL، احفظها في sessionStorage
+    if (encoded.length > 20000) {
+      sessionStorage.setItem('luay_pending_result', json);
+      const p = new URLSearchParams({ n: lastRecord.student.name, sc: lastRecord.score,
+        t: lastRecord.total, ex: 'mirrors', at: lastRecord.submittedAt, session: '1' });
+      window.open('results.html?' + p, '_blank');
+    } else {
+      const p = new URLSearchParams({ n: lastRecord.student.name, sc: lastRecord.score,
+        t: lastRecord.total, ex: 'mirrors', at: lastRecord.submittedAt, data: encoded });
+      window.open('results.html?' + p, '_blank');
+    }
   } catch(e) {
     const p = new URLSearchParams({ n: lastRecord.student.name, i: lastRecord.student.id,
       s: lastRecord.student.section, sc: lastRecord.score, t: lastRecord.total,
