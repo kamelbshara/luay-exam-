@@ -613,6 +613,12 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem(`physics_exam_student_${uid}`);
     alert(`تم فتح القفل للطالب رقم ${uid} على هذا الجهاز.`);
   }
+  // تعبئة اسم الطالب تلقائياً إذا أُرسل في الرابط (?student=الاسم)
+  const preStudent = q.get('student');
+  if(preStudent) {
+    const ni = document.getElementById('studentName');
+    if(ni) { ni.value = decodeURIComponent(preStudent); }
+  }
 });
 
 const FIGS = {
@@ -1402,16 +1408,32 @@ async function downloadResult() {
 
 function registerResult() {
   if(!lastRecord) return;
-  const p = new URLSearchParams({
-    n: lastRecord.student.name,
-    i: lastRecord.student.id,
-    s: lastRecord.student.section,
-    sc: lastRecord.score,
-    t: lastRecord.total,
-    ex: 'mirrors',
-    at: lastRecord.submittedAt
-  });
-  window.open('results.html?' + p, '_blank');
+  const payload = {
+    student: lastRecord.student,
+    exam: 'mirrors',
+    examLabel: lastRecord.exam || '',
+    model: lastRecord.model || '',
+    submittedAt: lastRecord.submittedAt,
+    score: lastRecord.score,
+    total: lastRecord.total,
+    percent: lastRecord.percent || 0,
+    durationSeconds: lastRecord.durationSeconds || 0,
+    violations: lastRecord.violations || 0,
+    timedOut: lastRecord.timedOut || false,
+    answers: lastRecord.answers || [],
+    skills: lastRecord.skills || []
+  };
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const p = new URLSearchParams({ n: lastRecord.student.name, sc: lastRecord.score,
+      t: lastRecord.total, ex: 'mirrors', at: lastRecord.submittedAt, data: encoded });
+    window.open('results.html?' + p, '_blank');
+  } catch(e) {
+    const p = new URLSearchParams({ n: lastRecord.student.name, i: lastRecord.student.id,
+      s: lastRecord.student.section, sc: lastRecord.score, t: lastRecord.total,
+      ex: 'mirrors', at: lastRecord.submittedAt });
+    window.open('results.html?' + p, '_blank');
+  }
 }
 
 async function sendWhatsApp() {

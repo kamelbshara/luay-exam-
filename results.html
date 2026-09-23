@@ -324,36 +324,64 @@ function save() {
 function readURLParams() {
   const p = new URLSearchParams(location.search);
   if (!p.get('n') && !p.get('sc')) return;
-  const rec = {
+  let rec = {
     name: p.get('n') || '',
     id: p.get('i') || '',
     section: p.get('s') || '',
     score: parseFloat(p.get('sc')) || 0,
     total: parseFloat(p.get('t')) || 100,
     exam: p.get('ex') || 'unknown',
-    submittedAt: p.get('at') || new Date().toISOString()
+    submittedAt: p.get('at') || new Date().toISOString(),
+    answers: [], skills: [], violations: 0, durationSeconds: 0, timedOut: false, model: ''
   };
+  // محاولة فك ترميز البيانات الكاملة (base64 JSON)
+  const encoded = p.get('data');
+  if (encoded) {
+    try {
+      const full = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+      if (full.student) {
+        rec.name    = full.student.name    || rec.name;
+        rec.id      = full.student.id      || rec.id;
+        rec.section = full.student.section || rec.section;
+      }
+      if (full.score    !== undefined) rec.score    = full.score;
+      if (full.total    !== undefined) rec.total    = full.total;
+      if (full.exam)       rec.exam        = full.exam;
+      if (full.examLabel)  rec.examLabel   = full.examLabel;
+      if (full.submittedAt) rec.submittedAt = full.submittedAt;
+      rec.answers         = full.answers        || [];
+      rec.skills          = full.skills         || [];
+      rec.violations      = full.violations      || 0;
+      rec.durationSeconds = full.durationSeconds || 0;
+      rec.timedOut        = full.timedOut        || false;
+      rec.model           = full.model           || '';
+    } catch(e) { /* استخدام البيانات الأساسية من URL */ }
+  }
   if (!rec.name) return;
   const exists = results.find(r => r.name === rec.name && r.exam === rec.exam);
   if (!exists) { results.push(rec); save(); }
-  // إزالة المتغيرات من URL
   history.replaceState({}, '', location.pathname);
-  // عرض شاشة نجاح للطالب وإخفاء لوحة المعلم
+  // عرض شاشة نجاح للطالب
   const pct = rec.total ? Math.round(rec.score / rec.total * 100) : 0;
+  const statusColor = pct >= 90 ? '#059669' : pct >= 75 ? '#0891b2' : pct >= 50 ? '#d97706' : '#dc2626';
+  const statusLabel = pct >= 90 ? 'ممتاز' : pct >= 75 ? 'جيد جداً' : pct >= 50 ? 'مقبول' : 'ضعيف';
+  const ansCount = rec.answers.length;
   document.body.innerHTML =
     '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;'
     +'justify-content:center;background:linear-gradient(160deg,#ecfdf5,#f0fdf4);'
     +'font-family:Cairo,sans-serif;text-align:center;padding:30px">'
-    +'<div style="background:#fff;border-radius:28px;padding:40px 36px;max-width:420px;'
+    +'<div style="background:#fff;border-radius:28px;padding:40px 36px;max-width:440px;width:100%;'
     +'box-shadow:0 20px 50px -10px rgba(5,150,105,.25);border:1px solid #a7f3d0">'
     +'<div style="font-size:60px;margin-bottom:16px">✅</div>'
-    +'<h2 style="font-size:22px;font-weight:900;color:#065f46;margin-bottom:8px">تم تسجيل نتيجتك!</h2>'
-    +'<p style="font-size:16px;color:#047857;font-weight:700;margin-bottom:20px">'+rec.name+'</p>'
-    +'<div style="background:#ecfdf5;border-radius:16px;padding:16px;margin-bottom:20px">'
-    +'<div style="font-size:40px;font-weight:900;color:#059669">'+rec.score+' / '+rec.total+'</div>'
-    +'<div style="font-size:18px;font-weight:800;color:#065f46">'+pct+'%</div>'
+    +'<h2 style="font-size:22px;font-weight:900;color:#065f46;margin-bottom:8px">تم تسجيل نتيجتك بنجاح!</h2>'
+    +'<p style="font-size:16px;color:#047857;font-weight:800;margin-bottom:20px">'+rec.name+'</p>'
+    +'<div style="background:#ecfdf5;border-radius:16px;padding:20px;margin-bottom:16px">'
+    +'<div style="font-size:44px;font-weight:900;color:'+statusColor+'">'+rec.score+' / '+rec.total+'</div>'
+    +'<div style="font-size:22px;font-weight:900;color:'+statusColor+'">'+pct+'%</div>'
+    +'<div style="font-size:16px;font-weight:800;color:'+statusColor+';margin-top:4px">'+statusLabel+'</div>'
     +'</div>'
-    +'<p style="font-size:14px;color:#6b7280">يمكنك الآن إغلاق هذه النافذة</p>'
+    +(ansCount > 0 ? '<div style="font-size:13px;color:#6b7280;margin-bottom:12px">تم تسجيل '+ansCount+' إجابة تفصيلية في سجل المعلم</div>' : '')
+    +'<p style="font-size:14px;color:#9ca3af">يمكنك الآن إغلاق هذه النافذة</p>'
     +'</div></div>';
 }
 
@@ -452,20 +480,70 @@ function clearAll() {
   renderTable();
 }
 
-// ---- تصدير Excel ----
+// ---- تصدير Excel (3 أوراق) ----
 function exportExcel() {
   if (!results.length) { alert('لا توجد نتائج للتصدير'); return; }
   const examName = e => e === 'mirrors' ? 'اختبار الصف 10 - مرايا' : e === 'energy' ? 'اختبار الصف 12 - طاقة' : e;
-  const data = [['#','اسم الطالب','رقم الطالب','الشعبة','الاختبار','الدرجة','الدرجة الكلية','النسبة %','وقت التسليم']];
-  filtered().forEach((r, i) => {
-    const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
-    data.push([i+1, r.name, r.id || '', r.section || '', examName(r.exam), r.score, r.total, pct + '%', r.submittedAt ? new Date(r.submittedAt).toLocaleString('ar-AE') : '']);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  // عرض الأعمدة
-  ws['!cols'] = [{wch:4},{wch:35},{wch:15},{wch:8},{wch:28},{wch:10},{wch:12},{wch:10},{wch:22}];
+  const rows = filtered();
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'نتائج الاختبارات');
+
+  // ورقة 1: ملخص النتائج
+  const s1 = [['#','اسم الطالب','رقم الطالب','الشعبة','الاختبار','الدرجة','الدرجة الكلية','النسبة %','الحالة','مخالفات الغش','المدة (ثانية)','وقت التسليم']];
+  rows.forEach((r, i) => {
+    const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+    const status = pct >= 90 ? 'ممتاز' : pct >= 75 ? 'جيد جداً' : pct >= 50 ? 'مقبول' : 'ضعيف';
+    s1.push([i+1, r.name, r.id||'', r.section||'', examName(r.exam), r.score, r.total, pct+'%', status, r.violations||0, r.durationSeconds||0, r.submittedAt ? new Date(r.submittedAt).toLocaleString('ar-AE') : '']);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(s1);
+  ws1['!cols'] = [{wch:4},{wch:30},{wch:14},{wch:8},{wch:28},{wch:8},{wch:12},{wch:9},{wch:10},{wch:12},{wch:12},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'نتائج_ملخص');
+
+  // ورقة 2: الإجابات التفصيلية
+  const s2 = [['اسم الطالب','الشعبة','الاختبار','رقم السؤال','نوع السؤال','إجابة الطالب','الإجابة الصحيحة','صح/خطأ','الدرجة المكتسبة']];
+  rows.forEach(r => {
+    const answers = r.answers || [];
+    if (!answers.length) {
+      s2.push([r.name, r.section||'', examName(r.exam), '—', '—', '—', '—', '—', '—']);
+    } else {
+      answers.forEach(a => {
+        if (a.type === 'mcq') {
+          s2.push([r.name, r.section||'', examName(r.exam), a.no||'', 'MCQ', a.chosen||'', a.correct||'', a.isCorrect ? '✓' : '✗', a.isCorrect ? 1 : 0]);
+        } else if (a.type === 'written') {
+          const parts = a.parts || [];
+          if (parts.length) {
+            parts.forEach(pt => {
+              s2.push([r.name, r.section||'', examName(r.exam), a.no||'', 'مقالي - '+( pt.label||''), pt.answer||'', '', pt.ok ? '✓' : '✗', pt.pts||0]);
+            });
+          } else {
+            s2.push([r.name, r.section||'', examName(r.exam), a.no||'', 'مقالي', '', '', '', a.earned||0]);
+          }
+        } else {
+          s2.push([r.name, r.section||'', examName(r.exam), a.no||'', a.type||'', '', '', '', '']);
+        }
+      });
+    }
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(s2);
+  ws2['!cols'] = [{wch:28},{wch:8},{wch:26},{wch:12},{wch:18},{wch:30},{wch:20},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'إجابات_تفصيلية');
+
+  // ورقة 3: تحليل المهارات
+  const s3 = [['اسم الطالب','الشعبة','الاختبار','المهارة','الدرجة المكتسبة','الدرجة الكلية','النسبة %']];
+  rows.forEach(r => {
+    const skills = r.skills || [];
+    if (!skills.length) {
+      s3.push([r.name, r.section||'', examName(r.exam), '—', '—', '—', '—']);
+    } else {
+      skills.forEach(sk => {
+        const sp = sk.total ? Math.round(sk.earned / sk.total * 100) : 0;
+        s3.push([r.name, r.section||'', examName(r.exam), sk.name||sk.label||'', sk.earned||0, sk.total||0, sp+'%']);
+      });
+    }
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(s3);
+  ws3['!cols'] = [{wch:28},{wch:8},{wch:26},{wch:30},{wch:14},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'المهارات');
+
   const date = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `نتائج_اختبارات_فيزياء_${date}.xlsx`);
 }
