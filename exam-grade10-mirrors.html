@@ -720,14 +720,18 @@ function cyrb53(str, seed = 0) {
 const teacherCodeOk = c => !!c && cyrb53('phys-exam-lock:' + c) === TEACHER_CODE_HASH;
 
 // فحص الخادم (Google Sheets) عند بدء الاختبار: يمنع الدخول مرة ثانية من أي جهاز
+// يستخدم GET لتجاوز مشكلة redirect من Google Apps Script (POST→GET)
 async function serverStartCheck(stu, model, teacherCode) {
   const ctl = new AbortController();
   const to = setTimeout(() => ctl.abort(), 25000);
   try {
-    const r = await fetch(SUBMIT_CONFIG.endpoint, {
-      method: 'POST', signal: ctl.signal,
-      body: JSON.stringify({action: 'start', token: SUBMIT_CONFIG.token, student: stu, teacherCode: teacherCode || '', ua: navigator.userAgent.slice(0, 90)})
+    const params = new URLSearchParams({
+      action: 'start', token: SUBMIT_CONFIG.token,
+      name: stu.name, id: stu.id, section: stu.section || '',
+      model: model || '', teacherCode: teacherCode || '',
+      ua: navigator.userAgent.slice(0, 90)
     });
+    const r = await fetch(SUBMIT_CONFIG.endpoint + '?' + params, { signal: ctl.signal });
     return await r.json();
   } finally { clearTimeout(to); }
 }
