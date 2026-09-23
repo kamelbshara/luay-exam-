@@ -282,6 +282,14 @@ body.locked{overflow:hidden}
 <script>
 // ---- قفل المعلم ----
 (function(){
+  // إذا كان الرابط يحمل نتيجة طالب، تجاوز القفل وسجّل النتيجة فقط
+  const p = new URLSearchParams(location.search);
+  if (p.get('n') || p.get('sc')) {
+    // وضع تسجيل الطالب — تجاوز القفل، readURLParams() ستعرض شاشة النجاح
+    document.getElementById('lockScreen').style.display='none';
+    return;
+  }
+  // وضع المعلم — تحقق من كلمة المرور
   const ok = sessionStorage.getItem('teacher_auth') === '1';
   if (ok) { document.getElementById('lockScreen').style.display='none'; }
   else { document.body.classList.add('locked'); }
@@ -326,17 +334,27 @@ function readURLParams() {
     submittedAt: p.get('at') || new Date().toISOString()
   };
   if (!rec.name) return;
-  // تجنب التسجيل المكرر لنفس الطالب في نفس الاختبار
   const exists = results.find(r => r.name === rec.name && r.exam === rec.exam);
-  if (!exists) {
-    results.push(rec);
-    save();
-    showToast('✅ تم تسجيل نتيجة ' + rec.name + ' بنجاح!');
-  } else {
-    showToast('ℹ️ نتيجة هذا الطالب مسجّلة مسبقاً');
-  }
+  if (!exists) { results.push(rec); save(); }
   // إزالة المتغيرات من URL
   history.replaceState({}, '', location.pathname);
+  // عرض شاشة نجاح للطالب وإخفاء لوحة المعلم
+  const pct = rec.total ? Math.round(rec.score / rec.total * 100) : 0;
+  document.body.innerHTML =
+    '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;'
+    +'justify-content:center;background:linear-gradient(160deg,#ecfdf5,#f0fdf4);'
+    +'font-family:Cairo,sans-serif;text-align:center;padding:30px">'
+    +'<div style="background:#fff;border-radius:28px;padding:40px 36px;max-width:420px;'
+    +'box-shadow:0 20px 50px -10px rgba(5,150,105,.25);border:1px solid #a7f3d0">'
+    +'<div style="font-size:60px;margin-bottom:16px">✅</div>'
+    +'<h2 style="font-size:22px;font-weight:900;color:#065f46;margin-bottom:8px">تم تسجيل نتيجتك!</h2>'
+    +'<p style="font-size:16px;color:#047857;font-weight:700;margin-bottom:20px">'+rec.name+'</p>'
+    +'<div style="background:#ecfdf5;border-radius:16px;padding:16px;margin-bottom:20px">'
+    +'<div style="font-size:40px;font-weight:900;color:#059669">'+rec.score+' / '+rec.total+'</div>'
+    +'<div style="font-size:18px;font-weight:800;color:#065f46">'+pct+'%</div>'
+    +'</div>'
+    +'<p style="font-size:14px;color:#6b7280">يمكنك الآن إغلاق هذه النافذة</p>'
+    +'</div></div>';
 }
 
 // ---- عرض الجدول ----
