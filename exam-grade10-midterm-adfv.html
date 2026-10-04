@@ -1226,7 +1226,7 @@ let violationCount = 0;
 // إعدادات تسليم النتائج للمعلم
 //  - endpoint: ضع هنا رابط (Google Apps Script Web App) ليستلم النتائج تلقائياً عند التسليم. اتركه فارغاً لتعطيل الإرسال التلقائي.
 //  - teacherWhatsApp: رقم المعلم بالصيغة الدولية بدون + (يُستخدم لزر الإرسال عبر واتساب).
-const SUBMIT_CONFIG = { endpoint: "https://script.google.com/macros/s/AKfycby4vtHZ7fZp3olxo3W3U6KdBM_US03qh-lDKq9wewhBXszbjRnmshLLKcu_DiTG7JJCig/exec", token: "physics2026", teacherWhatsApp: "971505369567" };   // endpoint: رابط Google Apps Script | token: نفس كلمة SECRET في السكربت
+const SUBMIT_CONFIG = { endpoint: "https://script.google.com/macros/s/AKfycby4vtHZ7fZp3olxo3W3U6KdBM_US03qh-lDKq9wewhBXszbjRnmshLLKcu_DiTG7JJCig/exec", token: "physics2026", teacherWhatsApp: "971505369567", resultsPage: "https://kamelbshara.github.io/luay-exam-/results.html", examKey: "mid-term-10-adfv" };   // endpoint: رابط Google Apps Script | token: نفس كلمة SECRET في السكربت
 // قراءة إعدادات المعلم من التخزين المحلي
 (function(){try{var _c=JSON.parse(localStorage.getItem('luay_exam_config')||'{}');if(_c.endpoint)SUBMIT_CONFIG.endpoint=_c.endpoint;if(_c.token)SUBMIT_CONFIG.token=_c.token;}catch(e){}}());
 // صفحة سجل المعلم (نفس رابط ملف المرجع)
